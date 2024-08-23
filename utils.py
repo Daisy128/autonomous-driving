@@ -66,7 +66,13 @@ def preprocess(image):
     """
     Combine all preprocess functions into one
     """
-    image = crop(image)
+    
+    #normalization:
+    if image.max() > 1.0:
+        image = image/127.5 - 1.0
+    else:
+        image = image - 1.0
+    #image = crop(image)
     image = resize(image)
     image = rgb2yuv(image)
     return image

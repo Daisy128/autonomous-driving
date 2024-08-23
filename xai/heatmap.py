@@ -9,7 +9,7 @@ from utils import *
 
 
 def score_when_decrease(output):
-    return -1.0 * output[:, 0]
+    return -1.0 * output[:, 0] #decrease ?
 
 
 def compute_heatmap(cfg, simulation_name, attention_type="SmoothGrad"):
@@ -33,14 +33,14 @@ def compute_heatmap(cfg, simulation_name, attention_type="SmoothGrad"):
 
     # load self-driving car model
     self_driving_car_model = tensorflow.keras.models.load_model(
-        Path(os.path.join(cfg.SDC_MODELS_DIR, cfg.SDC_MODEL_NAME)))
+        Path(os.path.join(cfg.SDC_MODELS_DIR, cfg.TRACK + '-' + cfg.SDC_MODEL_NAME + ('-mc' if cfg.USE_PREDICTIVE_UNCERTAINTY else '') + cfg.SDC_MODEL_NUMBER + '.h5')))
 
     # load attention model
     saliency = None
     if attention_type == "SmoothGrad":
-        saliency = Saliency(self_driving_car_model, model_modifier=None)
+        saliency = Saliency(self_driving_car_model, model_modifier=None) # Saliency: core class of SmoothGrad, by generating Saliency Map to visualize which part plays the most important role
     elif attention_type == "GradCam++":
-        saliency = GradcamPlusPlus(self_driving_car_model, model_modifier=None)
+        saliency = GradcamPlusPlus(self_driving_car_model, model_modifier=None) # GradcamPlusPlus: same for GradCam++
 
     avg_heatmaps = []
     avg_gradient_heatmaps = []
@@ -149,3 +149,17 @@ def compute_heatmap(cfg, simulation_name, attention_type="SmoothGrad"):
                            simulation_name,
                            "heatmaps-" + attention_type.lower(),
                            'driving_log.csv'), index=False)
+    
+    def main():
+        """
+        Load train/validation data_nominal set and train the model
+        """
+        cfg = Config()
+        cfg.from_pyfile("config_my.py")
+
+        simulation_name = "Udacity"
+        attention_type = "SmoothGrad"
+        compute_heatmap(cfg, simulation_name, attention_type)
+
+if __name__ == '__main__':
+    main()

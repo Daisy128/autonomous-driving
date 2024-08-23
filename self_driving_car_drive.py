@@ -9,14 +9,14 @@ from tensorflow import keras
 import utils
 from config import Config
 
-logging.disable(logging.WARNING)
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+logging.disable(logging.WARNING) #减少logs
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3" #减少logs
 
 # import warnings filter
 from warnings import simplefilter
 
 # ignore all future warnings
-simplefilter(action='ignore', category=FutureWarning)
+simplefilter(action='ignore', category=FutureWarning) #减少logs
 
 import numpy as np
 
@@ -30,8 +30,8 @@ from tensorflow.keras.models import load_model
 from utils import rmse, resize
 from selforacle.vae import VAE, normalize_and_reshape
 
-sio = socketio.Server()
-app = Flask(__name__)
+sio = socketio.Server() #创建SocketIO服务器实例,处理客户端和服务器之间的实时通信
+app = Flask(__name__) #创建Flask实例,处理HTTP请求
 model = None
 
 prev_image_array = None
@@ -41,9 +41,9 @@ frame_id = 0
 uncertainty = -1
 
 
-@sio.on('telemetry')
-def telemetry(sid, data):
-    if data:
+@sio.on('telemetry') #当客户端发送“telemetry”事件时，该函数会被调用
+def telemetry(sid, data): #sid: SocketIO客户端的会话ID; data: received data
+    if data: # if data exists
 
         # The current speed of the car
         speed = float(data["speed"])
@@ -86,6 +86,11 @@ def telemetry(sid, data):
             image.save(image_path)
 
         try:
+            '''
+            将接收到的图像数据进行解码并转为PIL图像
+            预处理, 如normalize_and_reshape
+            通过VAE模型对图像进行处理, 计算重构损失loss, 用于异常检测
+            '''
             # from PIL image to numpy array
             image = np.asarray(image)
 

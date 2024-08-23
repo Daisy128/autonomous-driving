@@ -27,11 +27,12 @@ def create_dave2_model(use_dropout=False):
     """
     Modified NVIDIA model w/ Dropout layers
     """
+    print("use_dropout: ", use_dropout)
     if use_dropout:
         inputs = keras.Input(shape=INPUT_SHAPE)
-        lambda_layer = keras.layers.Lambda(lambda x: x / 127.5 - 1.0, name="lambda_layer")(inputs)
+        #lambda_layer = keras.layers.Lambda(lambda x: x / 127.5 - 1.0, name="lambda_layer")(inputs)
         x = keras.layers.Conv2D(24, (5, 5), activation='relu', strides=(2, 2), kernel_regularizer=l2(1.0e-6))(
-            lambda_layer)
+            inputs)
         x = keras.layers.Dropout(rate=0.05)(x, training=True)
         x = keras.layers.Conv2D(36, (5, 5), activation='relu', strides=(2, 2), kernel_regularizer=l2(1.0e-6))(x)
         x = keras.layers.Dropout(rate=0.05)(x, training=True)
@@ -55,7 +56,7 @@ def create_dave2_model(use_dropout=False):
         original NVIDIA model w/out Dropout layers
         """
         model = Sequential()
-        model.add(Lambda(lambda x: x / 127.5 - 1.0, input_shape=INPUT_SHAPE))
+        model.add(Lambda(lambda x: x, input_shape=INPUT_SHAPE))
         model.add(Conv2D(24, (5, 5), activation='elu', strides=(2, 2)))
         model.add(Conv2D(36, (5, 5), activation='elu', strides=(2, 2)))
         model.add(Conv2D(48, (5, 5), activation='elu', strides=(2, 2)))
