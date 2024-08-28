@@ -159,7 +159,7 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     hist_df['plot'] = plot_name
     
     hist_csv_file = os.path.join('history', 
-                                 default_prefix_name + '-history.csv')
+                                 default_prefix_name + '-' + current_time + '-history.csv')
         
     with open(hist_csv_file, mode='w') as f:
         hist_df.to_csv(f, index=False)
