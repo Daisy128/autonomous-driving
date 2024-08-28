@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import tensorflow
 from tensorflow.keras import backend as K
+from image_testing import print_image
 
 from config import Config
 
@@ -82,10 +83,23 @@ def preprocess(image):
     Combine all preprocess functions into one
     """
     image = np.array(image)
-    image_0 = image.astype('uint8')
+    # print(f"Original image type: {type(image)}, shape: {image.shape}, dtype: {image.dtype}")
+    # print(f"Original image range: {image.min()} to {image.max()}")
+    image_0 = (image*255).astype('uint8')
+    # print(f"Converted to uint8 image range: {image_0.min()} to {image_0.max()}, dtype: {image_0.dtype}")
+    
     image_resize = resize(image_0)
+    # print(f"Resized image range: {image_0.min()} to {image_0.max()}, dtype: {image_resize.dtype}")
+
     image_yuv = rgb2yuv(image_resize)
+    # print(f"Converted to YUV image range: {image_0.min()} to {image_0.max()}, dtype: {image_yuv.dtype}")
+
     image_nor = normalize(image_yuv)
+    # print(f"Normalized image range: {image_0.min()} to {image_0.max()}, dtype: {image_nor.dtype}")
+    
+
+    #debug
+    # print_image(image_0, image_resize, image_yuv, image_nor)
     
     return image_nor
 

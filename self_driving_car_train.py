@@ -97,14 +97,15 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     """
     Train the self-driving car model
     """
-    if cfg.USE_PREDICTIVE_UNCERTAINTY: # USE_PREDICTIVE_UNCERTAINTY: use MC-Dropout model | boolean
-        name = os.path.join(cfg.SDC_MODELS_DIR, # SDC_MODELS_DIR: self-driving car models
-                            cfg.TRACK + '-' + cfg.SDC_MODEL_NAME.replace('.h5', '') + '-mc' + '-{epoch:03d}.h5') # .h5: HDF5
-        # 在每个 epoch 结束后保存模型时，插入当前的 epoch 数字，确保文件名唯一。如，epoch=5 时生成文件名 "track1-dave2-mc-005.h5", 
+    if cfg.USE_PREDICTIVE_UNCERTAINTY:
+        default_prefix_name = os.path.join(cfg.TRACK + '-' + cfg.SDC_MODEL_NAME + '-mc')
     else:
-        name = os.path.join(cfg.SDC_MODELS_DIR,
-                            cfg.TRACK + '-' + cfg.SDC_MODEL_NAME.replace('.h5', '') + '-{epoch:03d}.h5')
-
+        default_prefix_name = os.path.join(cfg.TRACK + '-' + cfg.SDC_MODEL_NAME)
+        
+    # 在每个 epoch 结束后保存模型时，插入当前的 epoch 数字，确保文件名唯一。如，epoch=5 时生成文件名 "track1-dave2-mc-005.h5", 
+    name = os.path.join(cfg.SDC_MODELS_DIR, # SDC_MODELS_DIR: self-driving car models
+                            default_prefix_name + '-{epoch:03d}.h5') # .h5: HDF5
+    
     checkpoint = ModelCheckpoint(
         name,
         monitor='val_loss', # 每个 epoch 结束时，检查验证损失是否为最优。
@@ -147,11 +148,9 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
 
     current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
     
-    if cfg.USE_PREDICTIVE_UNCERTAINTY:
-        plot_name = f'{cfg.TRACK}_{cfg.SDC_MODEL_NAME}_mc_{current_time}.png'
-    else:
-        plot_name = f'{cfg.TRACK}_{cfg.SDC_MODEL_NAME}_{current_time}.png'
-    plt.savefig(plot_name)
+    plot_name = f'{default_prefix_name}_{current_time}.png'
+    plot_path = os.path.join('history', 'loss_plot', plot_name)
+    plt.savefig(plot_path)
     plt.show()
     
     # store the data into history.csv
@@ -159,23 +158,16 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     hist_df['time'] = current_time
     hist_df['plot'] = plot_name
     
-    if cfg.USE_PREDICTIVE_UNCERTAINTY:
-        hist_csv_file = os.path.join('history', 
-                                    cfg.TRACK + '-' + cfg.SDC_MODEL_NAME + '-mc-history.csv')
-    else:
-        hist_csv_file = os.path.join('history', 
-                                    cfg.TRACK + '-' + cfg.SDC_MODEL_NAME + '-history.csv')
+    hist_csv_file = os.path.join('history', 
+                                 default_prefix_name + '-history.csv')
         
     with open(hist_csv_file, mode='w') as f:
         hist_df.to_csv(f, index=False)
 
     # store the trained model into .h5 file
-    if cfg.USE_PREDICTIVE_UNCERTAINTY:
-        name = os.path.join(cfg.SDC_MODELS_DIR,
-                            cfg.TRACK + '-' + cfg.SDC_MODEL_NAME.replace('.h5', '') + '-mc-final.h5')
-    else:
-        name = os.path.join(cfg.SDC_MODELS_DIR, cfg.TRACK + '-' + cfg.SDC_MODEL_NAME.replace('.h5', '') + '-final.h5')
-
+    name = os.path.join(cfg.SDC_MODELS_DIR,
+                        default_prefix_name + '-final.h5')
+   
     # save the last model anyway (might not be the best)
     model.save(name)
     tf.keras.backend.clear_session()
