@@ -22,7 +22,7 @@ NUM_EPOCHS_SDC_MODEL = 8  # training epochs for the self-driving car model
 BATCH_SIZE = 128  # number of samples per gradient update
 SAVE_BEST_ONLY = True  # only saves when the model is considered the "best" according to the quantity monitored
 LEARNING_RATE = 1.0e-4  # amount that the weights are updated during training
-USE_PREDICTIVE_UNCERTAINTY = True  # use MC-Dropout model
+USE_PREDICTIVE_UNCERTAINTY = False  # use MC-Dropout model
 NUM_SAMPLES_MC_DROPOUT = 20
 
 # Udacity simulation settings

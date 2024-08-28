@@ -1,4 +1,4 @@
-import datetime
+from datetime import timedelta, datetime
 import os
 import time
 
@@ -85,7 +85,7 @@ def load_data(cfg):
         exit()
 
     duration_train = time.time() - start
-    print("Loading training set completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
+    print("Loading training set completed in %s." % str(timedelta(seconds=round(duration_train))))
 
     print("Data set: " + str(len(x)) + " elements") # len(x) = number of rows of x
     print("Training set: " + str(len(x_train)) + " elements")
@@ -144,8 +144,32 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'val'], loc='upper left')
-    plt.show()
 
+    current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
+    
+    if cfg.USE_PREDICTIVE_UNCERTAINTY:
+        plot_name = f'{cfg.TRACK}_{cfg.SDC_MODEL_NAME}_mc_{current_time}.png'
+    else:
+        plot_name = f'{cfg.TRACK}_{cfg.SDC_MODEL_NAME}_{current_time}.png'
+    plt.savefig(plot_name)
+    plt.show()
+    
+    # store the data into history.csv
+    hist_df = pd.DataFrame(history.history)
+    hist_df['time'] = current_time
+    hist_df['plot'] = plot_name
+    
+    if cfg.USE_PREDICTIVE_UNCERTAINTY:
+        hist_csv_file = os.path.join('history', 
+                                    cfg.TRACK + '-' + cfg.SDC_MODEL_NAME + '-mc-history.csv')
+    else:
+        hist_csv_file = os.path.join('history', 
+                                    cfg.TRACK + '-' + cfg.SDC_MODEL_NAME + '-history.csv')
+        
+    with open(hist_csv_file, mode='w') as f:
+        hist_df.to_csv(f, index=False)
+
+    # store the trained model into .h5 file
     if cfg.USE_PREDICTIVE_UNCERTAINTY:
         name = os.path.join(cfg.SDC_MODELS_DIR,
                             cfg.TRACK + '-' + cfg.SDC_MODEL_NAME.replace('.h5', '') + '-mc-final.h5')
