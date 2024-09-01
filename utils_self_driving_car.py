@@ -335,9 +335,9 @@ def random_flip(image, steering_angle):
     """
     Randomly flipt the image left <-> right, and adjust the steering angle.
     """
-    if np.random.rand() < 0.5:
-        image = cv2.flip(image, 1)
-        steering_angle = -steering_angle
+    # if np.random.rand() < 0.5:
+    image = cv2.flip(image, 1)
+    steering_angle = -steering_angle
     return image, steering_angle
 
 
@@ -410,6 +410,7 @@ def augment(data_dir, center, left, right, steering_angle, range_x=100, range_y=
     Generate an augmented image and adjust steering angle.
     (The steering angle is associated with the center image)
     """
+    # compare to augment_single, this chooses one from center or left or right image
     image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
     image, steering_angle = random_flip(image, steering_angle)
     image, steering_angle = random_translate(image, steering_angle, range_x, range_y)

@@ -5,9 +5,9 @@ SAO_MODELS_DIR = "sao"  # autoencoder-based self-assessment oracle models
 TEST_SIZE = 0.2  # split of training data used for the validation set (keep it low)
 
 # simulations settings
-TRACK = "track1"  # ["track1"|"track2"|"track3"|"track1","track2","track3"] the race track to use
-TRACK1_DRIVING_STYLES = ["normal", "recovery"]  # ["normal", "recovery", "reverse"]
-TRACK2_DRIVING_STYLES = ["normal", "recovery"]  # , "recovery", "recovery2", "recovery3", "reverse", "sport_normal", "sport_reverse"]
+TRACK = "track2"  # ["track1"|"track2"|"track3"|"track1","track2","track3"] the race track to use
+TRACK1_DRIVING_STYLES = ["extreme"]  # ["normal", "recovery", "reverse"]
+TRACK2_DRIVING_STYLES = ["extreme"]  # , "recovery", "recovery2", "recovery3", "reverse", "sport_normal", "sport_reverse"]
 TRACK3_DRIVING_STYLES = ["normal", "recovery"]  # , "recovery", "recovery2", "reverse", "sport_normal"]
 TRACK1_IMG_PER_LAP = 1140
 TRACK2_IMG_PER_LAP = 1870
@@ -17,7 +17,7 @@ TRACK3_IMG_PER_LAP = 1375
 SDC_MODELS_DIR = "models/"  # self-driving car models
 SDC_MODEL_NAME = "dave2" #"dave2-mc-053.h5"  # self-driving car model "dave2"|"chauffeur"|"epoch"|"commaai"
 SDC_MODEL_NUMBER = "015" # for specify the path of heatmap resource
-NUM_EPOCHS_SDC_MODEL = 8  # training epochs for the self-driving car model
+NUM_EPOCHS_SDC_MODEL = 10  # training epochs for the self-driving car model
 # SAMPLES_PER_EPOCH = 100  # number of samples to process before going to the next epoch
 BATCH_SIZE = 128  # number of samples per gradient update
 SAVE_BEST_ONLY = True  # only saves when the model is considered the "best" according to the quantity monitored

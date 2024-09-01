@@ -1,21 +1,22 @@
-from datetime import timedelta, datetime
 import os
 import time
+import csv
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import csv
-from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+
 from sklearn.utils import shuffle
-from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
+from datetime import timedelta, datetime
 from tensorflow.keras.optimizers import Adam
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 
 from config import Config
-from self_driving_car_batch_generator import Generator
-from utils import get_driving_styles
 from utils_models import *
+from utils import get_driving_styles
+from self_driving_car_batch_generator import Generator
 
 np.random.seed(0) # 0 means can be any number
 # 随机种子控制随机数生成器的行为, 确保每次运行程序时，生成的随机数序列都是相同的。
@@ -97,6 +98,9 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     """
     Train the self-driving car model
     """
+
+    current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
+
     if cfg.USE_PREDICTIVE_UNCERTAINTY:
         default_prefix_name = os.path.join(cfg.TRACK + '-' + cfg.SDC_MODEL_NAME + '-mc')
     else:
@@ -113,6 +117,11 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
         save_best_only=True, # 仅保存验证损失最小的模型, 避免过拟合
         mode='auto') # 自动选择保存模型的模式。当监控值是损失（如 val_loss）时，auto 模式会自动选择 min，表示越小越好
 
+    final_model = os.path.join(cfg.SDC_MODELS_DIR,
+                               'final_model',
+                               default_prefix_name + "-" + current_time + '-final.h5') # .h5: HDF5
+    model.save(final_model)
+
     early_stop = keras.callbacks.EarlyStopping(monitor='loss',
                                                min_delta=.0005, # 只有当损失的改善超过 min_delta 时，才会认为模型有显著进步
                                                patience=10, # 如果经过10个 epoch 后损失没有显著改善，训练停止
@@ -124,18 +133,19 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
 
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=1e-6, verbose=1)
 
-    x_train, y_train = shuffle(x_train, y_train, random_state=0) # random_state=0 设置随机种子,确保了每次打乱的顺序是一致的，从而保证实验的可重复性
-    x_test, y_test = shuffle(x_test, y_test, random_state=0) # test data?
+    #x_train, y_train = shuffle(x_train, y_train, random_state=0) # random_state=0 设置随机种子,确保了每次打乱的顺序是一致的，从而保证实验的可重复性
+    #x_test, y_test = shuffle(x_test, y_test, random_state=0) # test data?
 
     train_generator = Generator(x_train, y_train, True, cfg)
-    val_generator = Generator(x_test, y_test, False, cfg)
+    val_generator = Generator(x_test, y_test, False, cfg) # False: not apply augmentation
 
     # model.fit开始训练模型
-    history = model.fit(train_generator,
-                        validation_data=val_generator,
-                        epochs=cfg.NUM_EPOCHS_SDC_MODEL,
-                        callbacks=[checkpoint, early_stop, reduce_lr], #callback
-                        verbose=1) # 输出详细信息
+    with tf.device('/GPU:0'):
+        history = model.fit(train_generator,
+                            validation_data=val_generator,
+                            epochs=cfg.NUM_EPOCHS_SDC_MODEL,
+                            callbacks=[checkpoint, early_stop, reduce_lr], #callback
+                            verbose=1) # 输出详细信息
 
     # summarize history for loss
     # history.history: model.fit()返回的 History 对象中存储的字典，包含了模型在每个 epoch 中的训练和验证损失
@@ -145,8 +155,6 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'val'], loc='upper left')
-
-    current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
     
     plot_name = f'{default_prefix_name}_{current_time}.png'
     plot_path = os.path.join('history', 'loss_plot', plot_name)
@@ -157,7 +165,9 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     hist_df = pd.DataFrame(history.history)
     hist_df['time'] = current_time
     hist_df['plot'] = plot_name
-    
+    hist_df['description'] = "track2 augmentation without brightness,dataset extreme" # can be changed in each train, for detailed description
+    #hist_df.loc[1:, ['description']] = np.nan # put value only to the first row of the file
+
     hist_csv_file = os.path.join('history', 
                                  default_prefix_name + '-' + current_time + '-history.csv')
         
@@ -170,6 +180,7 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
    
     # save the last model anyway (might not be the best)
     model.save(name)
+    print(current_time)
     tf.keras.backend.clear_session()
 
 

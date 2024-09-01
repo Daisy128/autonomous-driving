@@ -85,9 +85,11 @@ def preprocess(image):
     image = np.array(image)
     # print(f"Original image type: {type(image)}, shape: {image.shape}, dtype: {image.dtype}")
     # print(f"Original image range: {image.min()} to {image.max()}")
-    image_0 = (image*255).astype('uint8')
+
+    image_0 = (image * 255.0).astype('uint8') # input picture [0,1]
     # print(f"Converted to uint8 image range: {image_0.min()} to {image_0.max()}, dtype: {image_0.dtype}")
-    
+    #image_0 = normalize(image)
+
     image_resize = resize(image_0)
     # print(f"Resized image range: {image_0.min()} to {image_0.max()}, dtype: {image_resize.dtype}")
 
@@ -96,10 +98,9 @@ def preprocess(image):
 
     image_nor = normalize(image_yuv)
     # print(f"Normalized image range: {image_0.min()} to {image_0.max()}, dtype: {image_nor.dtype}")
-    
 
-    #debug
-    # print_image(image_0, image_resize, image_yuv, image_nor)
+    # debug
+    #print_image(image_0, image_resize, image_yuv, image_nor)
     
     return image_nor
 
@@ -109,10 +110,10 @@ def choose_image(data_dir, center, left, right, steering_angle):
     Randomly choose an image from the center, left or right, and adjust
     the steering angle.
     """
-    choice = np.random.choice(3)
-    if choice == 0:
+    choice = np.random.choice(3) # randomly choose from left, right, center
+    if choice == 0: # if choose left, steering + 0.2
         return load_image(data_dir, left), steering_angle + 0.2
-    elif choice == 1:
+    elif choice == 1: # if right, steer - 0.2
         return load_image(data_dir, right), steering_angle - 0.2
     return load_image(data_dir, center), steering_angle
 
@@ -187,9 +188,9 @@ def augment(data_dir, center, left, right, steering_angle, range_x=100, range_y=
     image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
     # TODO: flip should be applied to left/right only and w/ no probability
     image, steering_angle = random_flip(image, steering_angle)
-    image, steering_angle = random_translate(image, steering_angle, range_x, range_y)
-    image = random_shadow(image)
-    image = random_brightness(image)
+    #image, steering_angle = random_translate(image, steering_angle, range_x, range_y)
+    #image = random_shadow(image)
+    #image = random_brightness(image)
     return image, steering_angle
 
 

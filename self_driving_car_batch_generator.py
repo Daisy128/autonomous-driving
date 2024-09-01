@@ -37,11 +37,9 @@ class Generator(Sequence):
 
             # augmentation
             if self.is_training and np.random.rand() < 0.6:
-                # print("Applying augmentation")
                 image, steering_angle = augment(self.cfg.TRAINING_DATA_DIR + os.path.sep + self.cfg.TRAINING_SET_DIR,
                                                 center, left, right, steering_angle)
                 # print(f"Augmented image shape: {image.shape}, Augmented steering angle: {steering_angle}")
-
             else:
                 image = load_image(self.cfg.TRAINING_DATA_DIR + os.path.sep + self.cfg.TRAINING_SET_DIR, center)
                 # print(f"Loaded image shape: {image.shape}")
