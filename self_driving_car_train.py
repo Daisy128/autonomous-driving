@@ -117,12 +117,7 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
         save_best_only=True, # 仅保存验证损失最小的模型, 避免过拟合
         mode='auto') # 自动选择保存模型的模式。当监控值是损失（如 val_loss）时，auto 模式会自动选择 min，表示越小越好
 
-    final_model = os.path.join(cfg.SDC_MODELS_DIR,
-                               'final_model',
-                               default_prefix_name + "-" + current_time + '-final.h5') # .h5: HDF5
-    model.save(final_model)
-
-    early_stop = keras.callbacks.EarlyStopping(monitor='loss',
+    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                                                min_delta=.0005, # 只有当损失的改善超过 min_delta 时，才会认为模型有显著进步
                                                patience=10, # 如果经过10个 epoch 后损失没有显著改善，训练停止
                                                mode='auto') # loss -> mode= 'min'
@@ -136,7 +131,7 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     #x_train, y_train = shuffle(x_train, y_train, random_state=0) # random_state=0 设置随机种子,确保了每次打乱的顺序是一致的，从而保证实验的可重复性
     #x_test, y_test = shuffle(x_test, y_test, random_state=0) # test data?
 
-    train_generator = Generator(x_train, y_train, True, cfg)
+    train_generator = Generator(x_train, y_train, cfg.USE_AUGMENT, cfg)
     val_generator = Generator(x_test, y_test, False, cfg) # False: not apply augmentation
 
     # model.fit开始训练模型
@@ -144,7 +139,8 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
         history = model.fit(train_generator,
                             validation_data=val_generator,
                             epochs=cfg.NUM_EPOCHS_SDC_MODEL,
-                            callbacks=[checkpoint, early_stop, reduce_lr], #callback
+                            callbacks=[checkpoint, early_stop, reduce_lr], # callback with reducing lr
+                            #callbacks=[checkpoint, early_stop], #callback
                             verbose=1) # 输出详细信息
 
     # summarize history for loss
@@ -165,10 +161,16 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     hist_df = pd.DataFrame(history.history)
     hist_df['time'] = current_time
     hist_df['plot'] = plot_name
-    hist_df['description'] = "track2 augmentation without brightness,dataset extreme" # can be changed in each train, for detailed description
-    #hist_df.loc[1:, ['description']] = np.nan # put value only to the first row of the file
+    hist_df['description'] = (
+                                f"data: {cfg.TRACK1_DRIVING_STYLES}, mc: {cfg.USE_PREDICTIVE_UNCERTAINTY}, "
+                                f"aug: {cfg.USE_AUGMENT} with choose_image {cfg.AUG_CHOOSE_IMAGE}, "
+                                f"random_flip: {cfg.AUG_RANDOM_FLIP}, random_translate: {cfg.AUG_RANDOM_TRANSLATE}, "
+                                f"random_shadow: {cfg.AUG_RANDOM_SHADOW}, random_brightness: {cfg.AUG_RANDOM_BRIGHTNESS}"
+                            )    # can be changed in each train, for detailed description
+    
+    hist_df.loc[1:, ['description']] = np.nan # put value only to the first row of the file
 
-    hist_csv_file = os.path.join('history', 
+    hist_csv_file = os.path.join('history', '0908', 
                                  default_prefix_name + '-' + current_time + '-history.csv')
         
     with open(hist_csv_file, mode='w') as f:
@@ -180,6 +182,12 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
    
     # save the last model anyway (might not be the best)
     model.save(name)
+
+    final_model = os.path.join(cfg.SDC_MODELS_DIR,
+                               'final_model',
+                               default_prefix_name + "-" + current_time + '-final.h5') # .h5: HDF5
+    model.save(final_model)
+
     print(current_time)
     tf.keras.backend.clear_session()
 

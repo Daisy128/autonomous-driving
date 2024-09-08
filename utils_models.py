@@ -33,9 +33,9 @@ def create_dave2_model(use_dropout=False):
         #lambda_layer = keras.layers.Lambda(lambda x: x / 127.5 - 1.0, name="lambda_layer")(inputs)
         x = keras.layers.Conv2D(24, (5, 5), activation='relu', strides=(2, 2), kernel_regularizer=l2(1.0e-6))(
             inputs)
-        x = keras.layers.Dropout(rate=0.05)(x, training=True)
+        #x = keras.layers.Dropout(rate=0.05)(x, training=True)
         x = keras.layers.Conv2D(36, (5, 5), activation='relu', strides=(2, 2), kernel_regularizer=l2(1.0e-6))(x)
-        x = keras.layers.Dropout(rate=0.05)(x, training=True)
+        #x = keras.layers.Dropout(rate=0.05)(x, training=True)
         x = keras.layers.Conv2D(48, (5, 5), activation='relu', strides=(2, 2), kernel_regularizer=l2(1.0e-6))(x)
         x = keras.layers.Dropout(rate=0.05)(x, training=True)
         x = keras.layers.Conv2D(64, (3, 3), activation='relu', kernel_regularizer=l2(1.0e-6))(x)

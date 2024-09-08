@@ -135,3 +135,5 @@ dependencies:
       - wrapt==1.14.1
       - yarl==1.9.4
 prefix: /home/jiaqq/anaconda3/envs/myenv
+# cuda, cudnn, and tensorflow versions are compatible here
+# if GPU not visiable, run: sudo apt install nvidia-driver-535

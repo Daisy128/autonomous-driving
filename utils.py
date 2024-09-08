@@ -122,7 +122,8 @@ def random_flip(image, steering_angle):
     """
     Randomly flip the image left <-> right, and adjust the steering angle.
     """
-    if np.random.rand() < 0.5:
+    if np.random.rand() < 0.5 and steering_angle < 0:
+    #if np.random.rand() < 0.5:
         image = cv2.flip(image, 1)
         steering_angle = -steering_angle
     return image, steering_angle
@@ -161,7 +162,7 @@ def random_shadow(image):
 
     # choose which side should have shadow and adjust saturation
     cond = mask == np.random.randint(2)
-    s_ratio = np.random.uniform(low=0.2, high=0.5)
+    s_ratio = np.random.uniform(low=0.4, high=0.7)
 
     # adjust Saturation in HLS(Hue, Light, Saturation)
     hls = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
@@ -180,17 +181,24 @@ def random_brightness(image):
     return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
 
 
-def augment(data_dir, center, left, right, steering_angle, range_x=100, range_y=10):
+def augment(cfg, data_dir, center, left, right, steering_angle, range_x=50, range_y=10):
     """
     Generate an augmented image and adjust steering angle.
     (The steering angle is associated with the center image)
     """
-    image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
+    #image, steering_angle = load_image(data_dir, center), steering_angle
+    if cfg.AUG_CHOOSE_IMAGE:
+        image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
     # TODO: flip should be applied to left/right only and w/ no probability
-    image, steering_angle = random_flip(image, steering_angle)
-    #image, steering_angle = random_translate(image, steering_angle, range_x, range_y)
-    #image = random_shadow(image)
-    #image = random_brightness(image)
+    if cfg.AUG_RANDOM_FLIP:
+        if image is left or image is right:
+            image, steering_angle = random_flip(image, steering_angle)
+    if cfg.AUG_RANDOM_TRANSLATE:
+        image, steering_angle = random_translate(image, steering_angle, range_x, range_y)
+    if cfg.AUG_RANDOM_SHADOW:
+        image = random_shadow(image)
+    if cfg.AUG_RANDOM_BRIGHTNESS:
+        image = random_brightness(image)
     return image, steering_angle
 
 
