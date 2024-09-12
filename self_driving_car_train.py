@@ -15,13 +15,12 @@ from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 
 from config import Config
 from utils_models import *
+from histogram_vis import *
 from utils import get_driving_styles
 from self_driving_car_batch_generator import Generator
 
 np.random.seed(0) # 0 means can be any number
-# 随机种子控制随机数生成器的行为, 确保每次运行程序时，生成的随机数序列都是相同的。
-# 这对于调试和结果比较非常重要，因为它消除了由于随机因素导致的结果差异。
-
+# 随机种子控制随机数生成器的行为, 消除由于随机因素导致的结果差异.确保每次运行程序时，生成的随机数序列都是相同的。
 
 def load_data(cfg):
     """
@@ -42,6 +41,7 @@ def load_data(cfg):
     y_test = None
 
     column_name = ['center', 'left', 'right', 'steering', 'throttle', 'brake', 'speed', 'lap', 'sector', 'cte']
+    all_steering_data = []
 
     # if we have multiple driving styles, like ["normal", "recovery", "reverse"]
     # the following for loop concatenate the three csv files into one '垂直堆叠rows'
@@ -71,16 +71,36 @@ def load_data(cfg):
                 # similar to (x = x + 1), where x refers 'x' in the parenthesis, 1 refers 'data_df[['center', 'left', 'right']].values'
                 x = np.concatenate((x, data_df[['center', 'left', 'right']].values), axis=0) # axis=0用于将来自多个 CSV 文件的数据合并, 垂直堆叠数组，增加行数。
                 y = np.concatenate((y, data_df['steering'].values), axis=0)
+
+            # add all data into one to sample
+            all_steering_data.extend(data_df['steering'].values)
+
         except FileNotFoundError:
             print("Unable to read file %s" % path)
             continue
 
     if x is None:
-        print("No driving data_nominal were provided for training. Provide correct paths to the driving_log.csv files")
+        print("No driving data were provided for training. Provide correct paths to the driving_log.csv files.")
         exit()
 
     try:
-        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=cfg.TEST_SIZE, random_state=0)
+        # 将 steering 数据转换为 DataFrame，便于采样
+        if cfg.SAMPLE_DATA:
+            sampled_indices = data_sampling(y)
+            # 根据平衡后的 steering 数据重新生成 x 和 y
+            #sampled_indices = sampled_df.index
+            x_sampled = x[sampled_indices]
+            y_sampled = y[sampled_indices]
+
+            # debug
+            # df_sampled = pd.DataFrame({'steering': y_sampled})
+            # print_histogram(df_sampled, data_df)
+
+            # 将数据集划分为训练集和测试集
+            x_train, x_test, y_train, y_test = train_test_split(x_sampled, y_sampled, test_size=cfg.TEST_SIZE, random_state=0)
+        else:
+            x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=cfg.TEST_SIZE, random_state=0)
+        
     except TypeError:
         print("Missing header to csv files")
         exit()
@@ -88,9 +108,10 @@ def load_data(cfg):
     duration_train = time.time() - start
     print("Loading training set completed in %s." % str(timedelta(seconds=round(duration_train))))
 
-    print("Data set: " + str(len(x)) + " elements") # len(x) = number of rows of x
-    print("Training set: " + str(len(x_train)) + " elements")
-    print("Test set: " + str(len(x_test)) + " elements")
+    print(f"Data set: {len(x)} elements")
+    print(f"Training set: {len(x_train)} elements")
+    print(f"Test set: {len(x_test)} elements")
+    
     return x_train, x_test, y_train, y_test
 
 
@@ -108,13 +129,14 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
         
     # 在每个 epoch 结束后保存模型时，插入当前的 epoch 数字，确保文件名唯一。如，epoch=5 时生成文件名 "track1-dave2-mc-005.h5", 
     name = os.path.join(cfg.SDC_MODELS_DIR, # SDC_MODELS_DIR: self-driving car models
-                            default_prefix_name + '-{epoch:03d}.h5') # .h5: HDF5
+                        cfg.TRACK,
+                        default_prefix_name + '-{epoch:03d}.h5') # .h5: HDF5
     
     checkpoint = ModelCheckpoint(
         name,
         monitor='val_loss', # 每个 epoch 结束时，检查验证损失是否为最优。
         verbose=0, # 0表示不输出详细信息; 可以设置为1来显示保存信息
-        save_best_only=True, # 仅保存验证损失最小的模型, 避免过拟合
+        save_best_only=False, # 仅保存验证损失最小的模型 ?
         mode='auto') # 自动选择保存模型的模式。当监控值是损失（如 val_loss）时，auto 模式会自动选择 min，表示越小越好
 
     early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
@@ -153,7 +175,7 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     plt.legend(['train', 'val'], loc='upper left')
     
     plot_name = f'{default_prefix_name}_{current_time}.png'
-    plot_path = os.path.join('history', 'loss_plot', plot_name)
+    plot_path = os.path.join('history', cfg.TRACK, 'loss_plot', plot_name)
     plt.savefig(plot_path)
     plt.show()
     
@@ -162,7 +184,7 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     hist_df['time'] = current_time
     hist_df['plot'] = plot_name
     hist_df['description'] = (
-                                f"data: {cfg.TRACK1_DRIVING_STYLES}, mc: {cfg.USE_PREDICTIVE_UNCERTAINTY}, "
+                                f"data: {get_driving_styles(cfg)}, mc: {cfg.USE_PREDICTIVE_UNCERTAINTY}, "
                                 f"aug: {cfg.USE_AUGMENT} with choose_image {cfg.AUG_CHOOSE_IMAGE}, "
                                 f"random_flip: {cfg.AUG_RANDOM_FLIP}, random_translate: {cfg.AUG_RANDOM_TRANSLATE}, "
                                 f"random_shadow: {cfg.AUG_RANDOM_SHADOW}, random_brightness: {cfg.AUG_RANDOM_BRIGHTNESS}"
@@ -170,7 +192,7 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     
     hist_df.loc[1:, ['description']] = np.nan # put value only to the first row of the file
 
-    hist_csv_file = os.path.join('history', '0908', 
+    hist_csv_file = os.path.join('history', cfg.TRACK, 
                                  default_prefix_name + '-' + current_time + '-history.csv')
         
     with open(hist_csv_file, mode='w') as f:
@@ -178,6 +200,7 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
 
     # store the trained model into .h5 file
     name = os.path.join(cfg.SDC_MODELS_DIR,
+                        cfg.TRACK,
                         default_prefix_name + '-final.h5')
    
     # save the last model anyway (might not be the best)
@@ -185,6 +208,7 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
 
     final_model = os.path.join(cfg.SDC_MODELS_DIR,
                                'final_model',
+                               cfg.TRACK,
                                default_prefix_name + "-" + current_time + '-final.h5') # .h5: HDF5
     model.save(final_model)
 

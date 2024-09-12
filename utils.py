@@ -41,6 +41,22 @@ def load_image(data_dir, image_file):
         print(image_file + " not found")
         # exit(1)
 
+def load_all_images(data_dir, center, left, right, steering_angle):
+    """
+    Load the center, left, and right images and adjust the steering angles
+    """
+    # Load the images
+    center_image = load_image(data_dir, center)
+    left_image = load_image(data_dir, left)
+    right_image = load_image(data_dir, right)
+    
+    # Adjust steering angles
+    left_steering_angle = steering_angle + 0.2
+    right_steering_angle = steering_angle - 0.2
+    
+    # Return the images and the adjusted steering angles
+    return center_image, left_image, right_image, steering_angle, left_steering_angle, right_steering_angle
+
 
 def crop(image):
     """
@@ -110,20 +126,34 @@ def choose_image(data_dir, center, left, right, steering_angle):
     Randomly choose an image from the center, left or right, and adjust
     the steering angle.
     """
+    # if abs(steering_angle) > 2.0:
+    #     center_image = load_image(data_dir, center)
+    #     left_image = load_image(data_dir, left)
+    #     right_image = load_image(data_dir, right)
+    #     # Adjust steering angles for each image
+    #     left_steering = steering_angle + 0.2
+    #     right_steering = steering_angle - 0.2
+    #     return [(left_image, left_steering), (right_image, right_steering), (center_image, steering_angle)]
+
     choice = np.random.choice(3) # randomly choose from left, right, center
     if choice == 0: # if choose left, steering + 0.2
+        # adjustment = 0.4 if abs(steering_angle) > 0.5 else 0.1
+        # return load_image(data_dir, left), steering_angle + adjustment
         return load_image(data_dir, left), steering_angle + 0.2
-    elif choice == 1: # if right, steer - 0.2
+    elif choice == 1:
+        # adjustment = 0.4 if abs(steering_angle) > 0.5 else 0.1
+        # return load_image(data_dir, left), steering_angle - adjustment
         return load_image(data_dir, right), steering_angle - 0.2
-    return load_image(data_dir, center), steering_angle
+    else:
+        return load_image(data_dir, center), steering_angle
 
 
 def random_flip(image, steering_angle):
     """
     Randomly flip the image left <-> right, and adjust the steering angle.
     """
-    if np.random.rand() < 0.5 and steering_angle < 0:
-    #if np.random.rand() < 0.5:
+    #if np.random.rand() < 0.5 and steering_angle < 0:
+    if np.random.rand() < 0.5:
         image = cv2.flip(image, 1)
         steering_angle = -steering_angle
     return image, steering_angle
@@ -189,10 +219,11 @@ def augment(cfg, data_dir, center, left, right, steering_angle, range_x=50, rang
     #image, steering_angle = load_image(data_dir, center), steering_angle
     if cfg.AUG_CHOOSE_IMAGE:
         image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
+    else:
+        image, steering_angle = load_image(data_dir, center), steering_angle
     # TODO: flip should be applied to left/right only and w/ no probability
     if cfg.AUG_RANDOM_FLIP:
-        if image is left or image is right:
-            image, steering_angle = random_flip(image, steering_angle)
+        image, steering_angle = random_flip(image, steering_angle)
     if cfg.AUG_RANDOM_TRANSLATE:
         image, steering_angle = random_translate(image, steering_angle, range_x, range_y)
     if cfg.AUG_RANDOM_SHADOW:

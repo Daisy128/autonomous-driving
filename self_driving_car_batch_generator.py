@@ -3,8 +3,7 @@ import os
 import numpy as np
 from tensorflow.keras.utils import Sequence
 
-from utils import RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, load_image, augment, preprocess
-
+from utils import RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, load_all_images, load_image, augment, preprocess
 
 class Generator(Sequence):
 
