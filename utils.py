@@ -206,7 +206,7 @@ def augment(cfg, data_dir, image, steering_angle, range_x=50, range_y=10):
     # else:
     image, steering_angle = load_image(data_dir, image), steering_angle
     # TODO: flip should be applied to left/right only and w/ no probability
-    if cfg.AUG_RANDOM_FLIP  and image in ["left", "right"]:
+    if cfg.AUG_RANDOM_FLIP:
         image, steering_angle = random_flip(image, steering_angle)
     if cfg.AUG_RANDOM_TRANSLATE:
         image, steering_angle = random_translate(image, steering_angle, range_x, range_y)

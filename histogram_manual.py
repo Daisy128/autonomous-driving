@@ -10,8 +10,6 @@ different_package = False
 cfg = Config()
 cfg.from_pyfile("config_my.py")
 
-
-
 drive = get_driving_styles(cfg)
 
 if different_package:
