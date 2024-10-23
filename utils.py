@@ -41,22 +41,6 @@ def load_image(data_dir, image_file):
         print(image_file + " not found")
         # exit(1)
 
-def load_all_images(data_dir, center, left, right, steering_angle):
-    """
-    Load the center, left, and right images and adjust the steering angles
-    """
-    # Load the images
-    center_image = load_image(data_dir, center)
-    left_image = load_image(data_dir, left)
-    right_image = load_image(data_dir, right)
-    
-    # Adjust steering angles
-    left_steering_angle = steering_angle + 0.2
-    right_steering_angle = steering_angle - 0.2
-    
-    # Return the images and the adjusted steering angles
-    return center_image, left_image, right_image, steering_angle, left_steering_angle, right_steering_angle
-
 
 def crop(image):
     """
@@ -142,7 +126,7 @@ def choose_image(data_dir, center, left, right, steering_angle):
         return load_image(data_dir, left), steering_angle + 0.2
     elif choice == 1:
         # adjustment = 0.4 if abs(steering_angle) > 0.5 else 0.1
-        # return load_image(data_dir, left), steering_angle - adjustment
+        # return load_image(data_dir, right), steering_angle - adjustment
         return load_image(data_dir, right), steering_angle - 0.2
     else:
         return load_image(data_dir, center), steering_angle
@@ -211,18 +195,18 @@ def random_brightness(image):
     return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
 
 
-def augment(cfg, data_dir, center, left, right, steering_angle, range_x=50, range_y=10):
+def augment(cfg, data_dir, image, steering_angle, range_x=50, range_y=10):
     """
     Generate an augmented image and adjust steering angle.
     (The steering angle is associated with the center image)
     """
     #image, steering_angle = load_image(data_dir, center), steering_angle
-    if cfg.AUG_CHOOSE_IMAGE:
-        image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
-    else:
-        image, steering_angle = load_image(data_dir, center), steering_angle
+    # if cfg.AUG_CHOOSE_IMAGE:
+    #     image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
+    # else:
+    image, steering_angle = load_image(data_dir, image), steering_angle
     # TODO: flip should be applied to left/right only and w/ no probability
-    if cfg.AUG_RANDOM_FLIP:
+    if cfg.AUG_RANDOM_FLIP  and image in ["left", "right"]:
         image, steering_angle = random_flip(image, steering_angle)
     if cfg.AUG_RANDOM_TRANSLATE:
         image, steering_angle = random_translate(image, steering_angle, range_x, range_y)

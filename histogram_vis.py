@@ -30,7 +30,7 @@ def data_sampling(y):
     df_part1 = df[abs(df['steering']) <= 0.045]
     df_part2 = df[(abs(df['steering']) > 0.045)]
     
-    df_part1_sampled = df_part1.sample(frac=0.4, random_state=42, replace=len(df_part1) < 0.3 * len(df_part1))
+    df_part1_sampled = df_part1.sample(frac=0.6, random_state=0, replace=len(df_part1) < 0.3 * len(df_part1))
     
     df_balanced = pd.concat([df_part1_sampled, df_part2])
 

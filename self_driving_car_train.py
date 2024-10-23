@@ -11,6 +11,7 @@ from sklearn.utils import shuffle
 from datetime import timedelta, datetime
 from tensorflow.keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 
 from config import Config
@@ -49,7 +50,7 @@ def load_data(cfg):
         try:
             path = os.path.join(cfg.TRAINING_DATA_DIR,
                                 cfg.TRAINING_SET_DIR,
-                                cfg.TRACK,
+                                cfg.TRACK3_PATH,
                                 drive_style,
                                 'driving_log.csv')
             # 读取文件第一行
@@ -64,16 +65,35 @@ def load_data(cfg):
                 data_df.columns = column_name
             data_df.to_csv(path, index=False)  # 省略额外的第一列indexing
 
-            if x is None:
-                x = data_df[['center', 'left', 'right']].values
-                y = data_df['steering'].values
-            else:
-                # similar to (x = x + 1), where x refers 'x' in the parenthesis, 1 refers 'data_df[['center', 'left', 'right']].values'
-                x = np.concatenate((x, data_df[['center', 'left', 'right']].values), axis=0) # axis=0用于将来自多个 CSV 文件的数据合并, 垂直堆叠数组，增加行数。
-                y = np.concatenate((y, data_df['steering'].values), axis=0)
+            if cfg.ALL_DATA:
+                y_center = data_df['steering'].values
+                y_left = data_df['steering'].values + 0.02
+                y_right = data_df['steering'].values - 0.02
 
-            # add all data into one to sample
-            all_steering_data.extend(data_df['steering'].values)
+                if x is None:
+                    # 将 center, left, right 分别展平为一维数组并拼接
+                    x = np.concatenate((data_df['center'].values, data_df['left'].values, data_df['right'].values), axis=0)
+                    # 将 y_center, y_left, y_right 拼接成一维数组
+                    y = np.concatenate((y_center, y_left, y_right), axis=0)
+                    print(f"x shape: {x.shape}")
+                    print(f"y shape: {y.shape}")
+                else:
+                    new_x = np.concatenate((data_df['center'].values, data_df['left'].values, data_df['right'].values), axis=0)
+                    new_y = np.concatenate((y_center, y_left, y_right), axis=0)
+                    x = np.concatenate((x, new_x), axis=0)
+                    y = np.concatenate((y, new_y), axis=0)
+                    all_steering_data.extend(data_df['steering'].values)
+            else:
+                if x is None:
+                    x = data_df[['center', 'left', 'right']].values
+                    y = data_df['steering'].values
+                else:
+                    # similar to (x = x + 1), where x refers 'x' in the parenthesis, 1 refers 'data_df[['center', 'left', 'right']].values'
+                    x = np.concatenate((x, data_df[['center', 'left', 'right']].values), axis=0) # axis=0用于将来自多个 CSV 文件的数据合并, 垂直堆叠数组，增加行数。
+                    y = np.concatenate((y, data_df['steering'].values), axis=0)
+
+            # Used for sampling
+            
 
         except FileNotFoundError:
             print("Unable to read file %s" % path)
@@ -140,11 +160,19 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
         mode='auto') # 自动选择保存模型的模式。当监控值是损失（如 val_loss）时，auto 模式会自动选择 min，表示越小越好
 
     early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
-                                               min_delta=.0005, # 只有当损失的改善超过 min_delta 时，才会认为模型有显著进步
+                                               min_delta=.0001, # 只有当损失的改善超过 min_delta 时，才会认为模型有显著进步
                                                patience=10, # 如果经过10个 epoch 后损失没有显著改善，训练停止
                                                mode='auto') # loss -> mode= 'min'
     
 #    clear_memory = LambdaCallback(on_epoch_end=lambda epoch, logs: tf.keras.backend.clear_session())
+
+    if cfg.WITH_BASE:
+        track1_path = name = os.path.join(cfg.SDC_MODELS_DIR, 'track3', cfg.BASE_MODEL)
+        model.load_weights(track1_path)
+
+        # for layer in model.layers:
+        #     if 'conv' in layer.name:
+        #         layer.trainable = False
 
     model.compile(loss='mean_squared_error', optimizer=Adam(lr=cfg.LEARNING_RATE))
 
@@ -161,8 +189,8 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
         history = model.fit(train_generator,
                             validation_data=val_generator,
                             epochs=cfg.NUM_EPOCHS_SDC_MODEL,
-                            callbacks=[checkpoint, early_stop, reduce_lr], # callback with reducing lr
-                            #callbacks=[checkpoint, early_stop], #callback
+                            #callbacks=[checkpoint, early_stop, reduce_lr], # callback with reducing lr
+                            callbacks=[checkpoint, early_stop], #callback
                             verbose=1) # 输出详细信息
 
     # summarize history for loss

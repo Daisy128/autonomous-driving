@@ -3,7 +3,7 @@ import os
 import numpy as np
 from tensorflow.keras.utils import Sequence
 
-from utils import RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, load_all_images, load_image, augment, preprocess
+from utils import RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, load_image, augment, preprocess
 
 class Generator(Sequence):
 
@@ -29,25 +29,24 @@ class Generator(Sequence):
         # print(f"Initialized steers array with shape: {steers.shape}")
 
         for i, paths in enumerate(batch_paths):
-            center, left, right = batch_paths[i]
+            image = batch_paths[i]
             steering_angle = steering_angles[i]
 
             # print(f"Center: {center}, Left: {left}, Right: {right}, Steering angle: {steering_angle}")
 
             # augmentation
             if self.is_training and np.random.rand() < 0.6:
-                image, steering_angle = augment(self.cfg, self.cfg.TRAINING_DATA_DIR + os.path.sep + self.cfg.TRAINING_SET_DIR,
-                                                center, left, right, steering_angle)
+                image, steering = augment(self.cfg, self.cfg.TRAINING_DATA_DIR + os.path.sep + self.cfg.TRAINING_SET_DIR,
+                                                image, steering_angle)
                 # print(f"Augmented image shape: {image.shape}, Augmented steering angle: {steering_angle}")
             else:
-                image = load_image(self.cfg.TRAINING_DATA_DIR + os.path.sep + self.cfg.TRAINING_SET_DIR, center)
+                image = load_image(self.cfg.TRAINING_DATA_DIR + os.path.sep + self.cfg.TRAINING_SET_DIR, image)
+                steering = steering_angle
                 # print(f"Loaded image shape: {image.shape}")
 
-            # add the image and steering angle to the batch
             images[i] = preprocess(image)
             # print(f"Preprocessed image shape: {images[i].shape}")
-            steers[i] = steering_angle
-            # print(f"Preprocessed steer angle: {steers[i]}")
+            steers[i] = steering
 
         return images, steers
 
