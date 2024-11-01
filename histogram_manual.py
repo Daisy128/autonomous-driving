@@ -12,8 +12,9 @@ cfg.from_pyfile("config_my.py")
 
 drive = get_driving_styles(cfg)
 
+# TODO: change cfg variable 
 if different_package:
-    cfg.TRACK = "track3von1"
+    cfg.TRACK = "track3_sim2"
 
 column_name = ['center', 'left', 'right', 'steering', 'throttle', 'brake', 'speed', 'lap', 'sector', 'cte']
     
@@ -24,7 +25,7 @@ all_steering_data = []
 for drive_style in drive:
     path = os.path.join(cfg.TRAINING_DATA_DIR,
                         cfg.TRAINING_SET_DIR,
-                        cfg.TRACK,
+                        cfg.TRACK3_PATH,
                         drive_style,
                         'driving_log.csv')
     

@@ -6,17 +6,18 @@ TEST_SIZE = 0.2  # split of training data used for the validation set (keep it l
 
 # simulations settings
 TRACK = "track3"  # ["track1"|"track2"|"track3"|"track1","track2","track3"] the race track to use
-TRACK1_DRIVING_STYLES = ["normal", "recovery", "reverse1", "turn1", "extra1"]  # ["normal", "recovery", "reverse"]
+TRACK1_DRIVING_STYLES = ["normal"]  # ["normal", "recovery", "reverse"]
 TRACK2_DRIVING_STYLES = ["normal", "reverse"]  # , "recovery", "recovery2", "recovery3", "reverse", "sport_normal", "sport_reverse"]
+TRACK1_PATH = "track1_sim2"
 TRACK3_PATH = "track3_sim2"
-TRACK3_DRIVING_STYLES = ["normal"]  # , "recovery", "recovery2", "reverse", "sport_normal"]
+TRACK3_DRIVING_STYLES = ["extra", "extra_2"]  # , "recovery", "recovery2", "reverse"]
 
 TRACK1_IMG_PER_LAP = 1140
 TRACK2_IMG_PER_LAP = 1870
 TRACK3_IMG_PER_LAP = 1375
 
 WITH_BASE = False
-BASE_MODEL = 'track3-dave2-mc-014.h5'
+BASE_MODEL = 'base_1031_2_005.h5'
 
 # self-driving car model settings
 SDC_MODELS_DIR = "models/"  # self-driving car models
@@ -32,6 +33,7 @@ NUM_SAMPLES_MC_DROPOUT = 20
 
 # TODO: For False value need to fix the batch generator
 ALL_DATA = True
+
 SAMPLE_DATA = False
 USE_AUGMENT = True
 AUG_CHOOSE_IMAGE = True

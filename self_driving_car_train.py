@@ -17,7 +17,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from config import Config
 from utils_models import *
 from histogram_vis import *
-from utils import get_driving_styles
+from utils import get_driving_styles, get_driving_path
 from self_driving_car_batch_generator import Generator
 
 np.random.seed(0) # 0 means can be any number
@@ -50,7 +50,7 @@ def load_data(cfg):
         try:
             path = os.path.join(cfg.TRAINING_DATA_DIR,
                                 cfg.TRAINING_SET_DIR,
-                                cfg.TRACK3_PATH,
+                                f"{get_driving_path(cfg)}",
                                 drive_style,
                                 'driving_log.csv')
             # 读取文件第一行
@@ -89,7 +89,7 @@ def load_data(cfg):
                     y = data_df['steering'].values
                 else:
                     # similar to (x = x + 1), where x refers 'x' in the parenthesis, 1 refers 'data_df[['center', 'left', 'right']].values'
-                    x = np.concatenate((x, data_df[['center', 'left', 'right']].values), axis=0) # axis=0用于将来自多个 CSV 文件的数据合并, 垂直堆叠数组，增加行数。
+                    x = np.concatenate((x, data_df[['center', 'left', 'right']].values), axis=0) # axis=0用于CSV数据合并, 垂直堆叠数组(增加行数)
                     y = np.concatenate((y, data_df['steering'].values), axis=0)
 
             # Used for sampling
@@ -104,7 +104,7 @@ def load_data(cfg):
         exit()
 
     try:
-        # 将 steering 数据转换为 DataFrame，便于采样
+        # 将steering转换为DataFrame
         if cfg.SAMPLE_DATA:
             sampled_indices = data_sampling(y)
             # 根据平衡后的 steering 数据重新生成 x 和 y
@@ -167,12 +167,12 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
 #    clear_memory = LambdaCallback(on_epoch_end=lambda epoch, logs: tf.keras.backend.clear_session())
 
     if cfg.WITH_BASE:
-        track1_path = name = os.path.join(cfg.SDC_MODELS_DIR, 'track3', cfg.BASE_MODEL)
-        model.load_weights(track1_path)
+        track_path = os.path.join(cfg.SDC_MODELS_DIR, 'track3', cfg.BASE_MODEL)
+        model.load_weights(track_path)
 
         # for layer in model.layers:
         #     if 'conv' in layer.name:
-        #         layer.trainable = False
+        #         layer.trainable = True
 
     model.compile(loss='mean_squared_error', optimizer=Adam(lr=cfg.LEARNING_RATE))
 
