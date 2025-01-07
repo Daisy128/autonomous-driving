@@ -33,16 +33,10 @@ def load_data(cfg):
 
     start = time.time()
 
-    x = None
-    y = None
-    path = None
-    x_train = None
-    y_train = None
-    x_test = None
-    y_test = None
-
+    x_list = []
+    y_steering_list = []
+    y_throttle_list = []
     column_name = ['center', 'left', 'right', 'steering', 'throttle', 'brake', 'speed', 'lap', 'sector', 'cte']
-    all_steering_data = []
 
     # if we have multiple driving styles, like ["normal", "recovery", "reverse"]
     # the following for loop concatenate the three csv files into one '垂直堆叠rows'
@@ -53,73 +47,54 @@ def load_data(cfg):
                                 f"{get_driving_path(cfg)}",
                                 drive_style,
                                 'driving_log.csv')
-            # 读取文件第一行
-            with open(path, 'r') as f:
-                reader = csv.reader(f)
-                first_row = next(reader)
-            # 设置列名
-            if first_row == column_name:
-                data_df = pd.read_csv(path)
-            else:
-                data_df = pd.read_csv(path, header=None) # 读取且不要将第一行当作列名
-                data_df.columns = column_name
-            data_df.to_csv(path, index=False)  # 省略额外的第一列indexing
-
-            if cfg.ALL_DATA:
-                y_center = data_df['steering'].values
-                y_left = data_df['steering'].values + 0.02
-                y_right = data_df['steering'].values - 0.02
-
-                if x is None:
-                    # 将 center, left, right 分别展平为一维数组并拼接
-                    x = np.concatenate((data_df['center'].values, data_df['left'].values, data_df['right'].values), axis=0)
-                    # 将 y_center, y_left, y_right 拼接成一维数组
-                    y = np.concatenate((y_center, y_left, y_right), axis=0)
-                    print(f"x shape: {x.shape}")
-                    print(f"y shape: {y.shape}")
-                else:
-                    new_x = np.concatenate((data_df['center'].values, data_df['left'].values, data_df['right'].values), axis=0)
-                    new_y = np.concatenate((y_center, y_left, y_right), axis=0)
-                    x = np.concatenate((x, new_x), axis=0)
-                    y = np.concatenate((y, new_y), axis=0)
-                    all_steering_data.extend(data_df['steering'].values)
-            else:
-                if x is None:
-                    x = data_df[['center', 'left', 'right']].values
-                    y = data_df['steering'].values
-                else:
-                    # similar to (x = x + 1), where x refers 'x' in the parenthesis, 1 refers 'data_df[['center', 'left', 'right']].values'
-                    x = np.concatenate((x, data_df[['center', 'left', 'right']].values), axis=0) # axis=0用于CSV数据合并, 垂直堆叠数组(增加行数)
-                    y = np.concatenate((y, data_df['steering'].values), axis=0)
-
-            # Used for sampling
             
+            data_df = pd.read_csv(path, header=0)
+            if list(data_df.columns) != column_name:
+                data_df.columns = column_name
 
+            y_throttle_center = data_df['throttle'].values
+            y_throttle_left = y_throttle_center / 1.2   # adjust the speed for manual input
+            y_throttle_right = y_throttle_center / 1.2
+
+            y_center = data_df['steering'].values
+            y_left = y_center + 0.02   # cannot be greater than 0.1
+            y_right = y_center - 0.02
+
+            new_x = np.concatenate([data_df['center'].values, data_df['left'].values, data_df['right'].values])
+            new_y_steering = np.concatenate([y_center, y_left, y_right])
+            new_y_throttle = np.concatenate([y_throttle_center, y_throttle_left, y_throttle_right])
+
+            x_list.append(new_x)
+            y_steering_list.append(new_y_steering)
+            y_throttle_list.append(new_y_throttle)
+            
         except FileNotFoundError:
             print("Unable to read file %s" % path)
             continue
 
-    if x is None:
+    if not x_list:
         print("No driving data were provided for training. Provide correct paths to the driving_log.csv files.")
         exit()
 
+    x = np.concatenate(x_list, axis=0)
+    y_steering = np.concatenate(y_steering_list, axis=0).reshape(-1, 1)  # dimention: 1*N -> N*1
+    y_throttle = np.concatenate(y_throttle_list, axis=0).reshape(-1, 1)
+
+    # Now concatenate along axis=1 to stack them side by side
+    y = np.concatenate((y_steering, y_throttle), axis=1)
+    
     try:
-        # 将steering转换为DataFrame
-        if cfg.SAMPLE_DATA:
-            sampled_indices = data_sampling(y)
-            # 根据平衡后的 steering 数据重新生成 x 和 y
-            #sampled_indices = sampled_df.index
-            x_sampled = x[sampled_indices]
-            y_sampled = y[sampled_indices]
 
-            # debug
-            # df_sampled = pd.DataFrame({'steering': y_sampled})
-            # print_histogram(df_sampled, data_df)
+        # if cfg.SAMPLE_DATA:
+        #     sampled_indices = data_sampling(y)
+        #     x_sampled = x[sampled_indices]
+        #     y_sampled = y[sampled_indices]
 
-            # 将数据集划分为训练集和测试集
-            x_train, x_test, y_train, y_test = train_test_split(x_sampled, y_sampled, test_size=cfg.TEST_SIZE, random_state=0)
-        else:
-            x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=cfg.TEST_SIZE, random_state=0)
+        #     # debug
+        #     # df_sampled = pd.DataFrame({'steering': y_sampled})
+        #     # print_histogram(df_sampled, data_df)
+
+        x_train, x_test, y_train, y_test= train_test_split(x, y, test_size=cfg.TEST_SIZE, random_state=0)
         
     except TypeError:
         print("Missing header to csv files")
@@ -131,7 +106,7 @@ def load_data(cfg):
     print(f"Data set: {len(x)} elements")
     print(f"Training set: {len(x_train)} elements")
     print(f"Test set: {len(x_test)} elements")
-    
+
     return x_train, x_test, y_train, y_test
 
 
@@ -147,10 +122,9 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     else:
         default_prefix_name = os.path.join(cfg.TRACK + '-' + cfg.SDC_MODEL_NAME)
         
-    # 在每个 epoch 结束后保存模型时，插入当前的 epoch 数字，确保文件名唯一。如，epoch=5 时生成文件名 "track1-dave2-mc-005.h5", 
-    name = os.path.join(cfg.SDC_MODELS_DIR, # SDC_MODELS_DIR: self-driving car models
+    name = os.path.join(cfg.SDC_MODELS_DIR, # SDC_MODELS_DIR: "models"
                         cfg.TRACK,
-                        default_prefix_name + '-{epoch:03d}.h5') # .h5: HDF5
+                        default_prefix_name + '-{epoch:03d}.h5')
     
     checkpoint = ModelCheckpoint(
         name,
@@ -167,7 +141,7 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
 #    clear_memory = LambdaCallback(on_epoch_end=lambda epoch, logs: tf.keras.backend.clear_session())
 
     if cfg.WITH_BASE:
-        track_path = os.path.join(cfg.SDC_MODELS_DIR, 'track3', cfg.BASE_MODEL)
+        track_path = os.path.join(cfg.SDC_MODELS_DIR, cfg.BASE_MODEL)
         model.load_weights(track_path)
 
         # for layer in model.layers:
@@ -176,7 +150,7 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
 
     model.compile(loss='mean_squared_error', optimizer=Adam(lr=cfg.LEARNING_RATE))
 
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=1e-6, verbose=1)
+    #reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=1e-6, verbose=1)
 
     #x_train, y_train = shuffle(x_train, y_train, random_state=0) # random_state=0 设置随机种子,确保了每次打乱的顺序是一致的，从而保证实验的可重复性
     #x_test, y_test = shuffle(x_test, y_test, random_state=0) # test data?

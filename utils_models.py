@@ -39,7 +39,7 @@ def create_dave2_model(use_dropout=False):
             inputs)
         #x = keras.layers.Dropout(rate=0.05)(x, training=True)
         x = keras.layers.Conv2D(36, (5, 5), activation='relu', strides=(2, 2), kernel_regularizer=l2(1.0e-6))(x)
-        #x = keras.layers.Dropout(rate=0.05)(x, training=True)
+        #x = keras.layers.Dropout(rate=0.05)(x, training=Tru
         x = keras.layers.Conv2D(48, (5, 5), activation='relu', strides=(2, 2), kernel_regularizer=l2(1.0e-6))(x)
         x = keras.layers.Dropout(rate=0.05)(x, training=True)
         x = keras.layers.Conv2D(64, (3, 3), activation='relu', kernel_regularizer=l2(1.0e-6))(x)
@@ -53,7 +53,7 @@ def create_dave2_model(use_dropout=False):
         x = keras.layers.Dropout(rate=0.05)(x, training=True)
         x = keras.layers.Dense(10, activation='relu', kernel_regularizer=l2(1.0e-6))(x)
         x = keras.layers.Dropout(rate=0.05)(x, training=True)
-        outputs = keras.layers.Dense(1)(x)
+        outputs = keras.layers.Dense(2)(x)
         model = keras.Model(inputs=inputs, outputs=outputs)
     else:
         """

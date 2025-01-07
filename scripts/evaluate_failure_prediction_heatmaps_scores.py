@@ -167,11 +167,11 @@ def compute_tp_and_fn(data_df_anomalous, losses_on_anomalous, threshold, seconds
         number_frames_anomalous = pd.Series.max(data_df_anomalous['frameId'])
         fps_anomalous = 15  # only for icse20 configurations
     else:
-        number_frames_anomalous = pd.Series.max(data_df_anomalous['frameId'])
-        simulation_time_anomalous = pd.Series.max(data_df_anomalous['time'])
+        number_frames_anomalous = pd.Series.max(data_df_anomalous['frameId']) # im
+        simulation_time_anomalous = pd.Series.max(data_df_anomalous['time']) # im
         fps_anomalous = number_frames_anomalous // simulation_time_anomalous
 
-    crashed_anomalous = data_df_anomalous['crashed']
+    crashed_anomalous = data_df_anomalous['crashed'] # im
     crashed_anomalous.is_copy = None
     crashed_anomalous_in_anomalous_conditions = crashed_anomalous.copy()
 

@@ -117,23 +117,25 @@ def telemetry(sid, data): #sid: SocketIO客户端的会话ID; data: received dat
                 # save predictions from a sample pass
                 outputs = model.predict_on_batch(x)
 
-                # average over all passes is the final steering angle
-                steering_angle = outputs.mean(axis=0)[0]
-
+                # average over all passes is the final steering angle ?
+                steering_angle = outputs[:, 0].mean()
+                throttle = outputs[:, 1].mean()
                 # variance of predictions gives the uncertainty
-                uncertainty = outputs.var(axis=0)[0]
+                uncertainty = outputs.var()
             else:
-                steering_angle = float(model.predict(image, batch_size=1))
+                outputs = float(model.predict(image, batch_size=1))
+                steering_angle = outputs[:, 0]
+                throttle = outputs[:, 1]
 
             # lower the throttle as the speed increases
             # if the speed is above the current speed limit, we are on a downhill.
             # make sure we slow down first and then go back to the original max speed.
-            speed_limit = cfg.MAX_SPEED
+            #speed_limit = cfg.MAX_SPEED
 
-            if speed > speed_limit:
-                speed_limit = cfg.MIN_SPEED  # slow down
-            else:
-                speed_limit = cfg.MAX_SPEED
+            # if speed > speed_limit:
+            #     speed_limit = cfg.MIN_SPEED  # slow down
+            # else:
+            #     speed_limit = cfg.MAX_SPEED
 
             if loss > cfg.SAO_THRESHOLD * 1.1:
                 confidence = -1
@@ -142,7 +144,7 @@ def telemetry(sid, data): #sid: SocketIO客户端的会话ID; data: received dat
             else:
                 confidence = 1
 
-            throttle = 1.0 - steering_angle ** 2 - (speed / speed_limit) ** 2
+            #throttle = 1.0 - steering_angle ** 2 - (speed / speed_limit) ** 2
 
             global frame_id
 

@@ -5,13 +5,14 @@ import shutil
 import time
 
 import cv2
+from PIL import Image
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import tensorflow
 from tensorflow.keras import backend as K
-from image_testing import print_image
+#from image_testing import print_image
 
 from config import Config
 
@@ -36,11 +37,10 @@ def load_image(data_dir, image_file):
     local_path = "/".join(image_file.split("/")[-4:-1]) + "/" + image_file.split("/")[-1]
     img_path = "{0}/{1}".format(image_dir, local_path)
     try:
-        return mpimg.imread(img_path)
+        return np.asarray(Image.open(image_file)) # mpimg.imread(image_file)#(img_path)
     except FileNotFoundError:
         print(image_file + " not found")
         # exit(1)
-
 
 def crop(image):
     """

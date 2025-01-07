@@ -7,9 +7,10 @@ from utils import RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, loa
 
 class Generator(Sequence):
 
-    def __init__(self, path_to_pictures, steering_angles, is_training, cfg):
+    def __init__(self, path_to_pictures, output, is_training, cfg):
         self.path_to_pictures = path_to_pictures
-        self.steering_angles = steering_angles
+        self.steering_angles = output[:,0]
+        self.speed = output[:,1]
         self.is_training = is_training
         self.cfg = cfg
 
@@ -18,6 +19,7 @@ class Generator(Sequence):
         end_index = start_index + self.cfg.BATCH_SIZE
         batch_paths = self.path_to_pictures[start_index:end_index]
         steering_angles = self.steering_angles[start_index:end_index]
+        speed = self.speed[start_index:end_index]
         
         # print(f"Batch paths: {batch_paths}")
         # print(f"Steering angles: {steering_angles}")
@@ -47,8 +49,9 @@ class Generator(Sequence):
             images[i] = preprocess(image)
             # print(f"Preprocessed image shape: {images[i].shape}")
             steers[i] = steering
+        output = np.stack((steers, speed), axis=1)
 
-        return images, steers
+        return images, output
 
     def __len__(self):
         return len(self.path_to_pictures) // self.cfg.BATCH_SIZE

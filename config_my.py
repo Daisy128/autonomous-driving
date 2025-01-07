@@ -5,19 +5,19 @@ SAO_MODELS_DIR = "sao"  # autoencoder-based self-assessment oracle models
 TEST_SIZE = 0.2  # split of training data used for the validation set (keep it low)
 
 # simulations settings
-TRACK = "track3"  # ["track1"|"track2"|"track3"|"track1","track2","track3"] the race track to use
-TRACK1_DRIVING_STYLES = ["normal"]  # ["normal", "recovery", "reverse"]
+TRACK = "track1"  # ["track1"|"track2"|"track3"|"track1","track2","track3"] the race track to use
+TRACK1_DRIVING_STYLES = ["normal_lowspeed", "reverse_lowspeed","normal_lowspeed", "reverse_lowspeed"]  # ["normal", "recovery", "reverse"]
 TRACK2_DRIVING_STYLES = ["normal", "reverse"]  # , "recovery", "recovery2", "recovery3", "reverse", "sport_normal", "sport_reverse"]
-TRACK1_PATH = "track1_sim2"
-TRACK3_PATH = "track3_sim2"
-TRACK3_DRIVING_STYLES = ["extra", "extra_2"]  # , "recovery", "recovery2", "reverse"]
+TRACK1_PATH = "track1_throttle"
+TRACK3_PATH = "track3_throttle"
+TRACK3_DRIVING_STYLES = ["normal", "reverse", "normal", "reverse"]  # , "recovery", "recovery2", "reverse"]
 
 TRACK1_IMG_PER_LAP = 1140
 TRACK2_IMG_PER_LAP = 1870
 TRACK3_IMG_PER_LAP = 1375
 
 WITH_BASE = False
-BASE_MODEL = 'base_1031_2_005.h5'
+BASE_MODEL = 'track1/track1-steer-throttle.h5'
 
 # self-driving car model settings
 SDC_MODELS_DIR = "models/"  # self-driving car models
